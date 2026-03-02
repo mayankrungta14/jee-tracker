@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>JEE Advanced Tracker Pro</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+body{
+  font-family: Arial;
+  background:#0f172a;
+  color:white;
+  text-align:center;
+  margin:0;
+  padding:20px;
+}
+
+h1{color:gold;margin-bottom:5px;}
+h2{color:#ccc;margin-top:0;}
+
+.card{
+  background:#1e293b;
+  padding:20px;
+  margin:20px auto;
+  width:340px;
+  border-radius:12px;
+}
+
+input{
+  width:90%;
+  padding:8px;
+  margin:6px 0;
+  border-radius:6px;
+  border:none;
+}
+
+button{
+  padding:10px 18px;
+  background:gold;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+  margin-top:5px;
+}
+
+.result{margin:6px 0;font-size:17px;}
+
+#clock{
+  position:fixed;
+  top:15px;
+  right:15px;
+  background:red;
+  padding:10px;
+  border-radius:50%;
+  font-weight:bold;
+  display:none;
+}
+</style>
+</head>
+
+<body>
+
+<h1>IIT DELHI</h1>
+<h2>STABLE > SMART</h2>
+
+<div id="clock">20:00</div>
+
+<div class="card">
+<h3>Add Test</h3>
+
+<input type="number" id="score" placeholder="Score">
+<input type="number" id="attempted" placeholder="Attempted">
+<input type="number" id="correct" placeholder="Correct">
+<input type="number" id="wrongChange" placeholder="Wrong After Change">
+<input type="number" id="sleep" placeholder="Sleep Hours">
+<input type="number" id="overthink" placeholder="Overthinking (1-10)">
+
+<button onclick="addTest()">Add Test</button>
+<button onclick="startClock()">Start 20 Min Clock</button>
+</div>
+
+<div class="card">
+<h3>Dashboard</h3>
+<div class="result">Average Score: <span id="avg">0</span></div>
+<div class="result">Accuracy: <span id="acc">0</span>%</div>
+<div class="result">Average Sleep: <span id="sleepAvg">0</span></div>
+<div class="result">Overthinking Avg: <span id="overAvg">0</span></div>
+<div class="result">Status: <span id="status">Stable</span></div>
+</div>
+
+<div class="card">
+<canvas id="scoreChart"></canvas>
+</div>
+
+<script>
+let scores = JSON.parse(localStorage.getItem("scores")) || [];
+let totalCorrect = JSON.parse(localStorage.getItem("totalCorrect")) || 0;
+let totalAttempted = JSON.parse(localStorage.getItem("totalAttempted")) || 0;
+let sleepData = JSON.parse(localStorage.getItem("sleep")) || [];
+let overData = JSON.parse(localStorage.getItem("over")) || [];
+
+function saveData(){
+ localStorage.setItem("scores", JSON.stringify(scores));
+ localStorage.setItem("totalCorrect", totalCorrect);
+ localStorage.setItem("totalAttempted", totalAttempted);
+ localStorage.setItem("sleep", JSON.stringify(sleepData));
+ localStorage.setItem("over", JSON.stringify(overData));
+}
+
+function addTest(){
+ let score=Number(scoreInput.value);
+ let attempted=Number(attemptedInput.value);
+ let correct=Number(correctInput.value);
+ let wrongChange=Number(wrongChangeInput.value);
+ let sleep=Number(sleepInput.value);
+ let over=Number(overthinkInput.value);
+
+ if(!score||!attempted||!correct){alert("Fill required fields");return;}
+
+ scores.push(score);
+ totalCorrect+=correct;
+ totalAttempted+=attempted;
+ sleepData.push(sleep);
+ overData.push(over);
+
+ saveData();
+ updateDashboard();
+ updateChart();
+
+ document.querySelectorAll("input").forEach(i=>i.value="");
+}
+
+function updateDashboard(){
+ let avgScore=scores.reduce((a,b)=>a+b,0)/scores.length;
+ let accuracy=(totalCorrect/totalAttempted)*100;
+ let sleepAvg=sleepData.reduce((a,b)=>a+b,0)/sleepData.length;
+ let overAvg=overData.reduce((a,b)=>a+b,0)/overData.length;
+
+ avg.innerText=avgScore.toFixed(2);
+ acc.innerText=accuracy.toFixed(2);
+ sleepAvgSpan.innerText=sleepAvg.toFixed(2);
+ overAvgSpan.innerText=overAvg.toFixed(2);
+
+ if(overAvg>7){
+   status.innerText="MENTAL LEAK";
+   status.style.color="red";
+ }
+ else if(accuracy<65){
+   status.innerText="LOW ACCURACY";
+   status.style.color="orange";
+ }
+ else{
+   status.innerText="STABLE";
+   status.style.color="lightgreen";
+ }
+}
+
+let ctx=document.getElementById("scoreChart");
+let chart=new Chart(ctx,{
+ type:"line",
+ data:{
+  labels:scores.map((_,i)=>"Test "+(i+1)),
+  datasets:[{
+    label:"Score Trend",
+    data:scores,
+    borderColor:"gold",
+    fill:false
+  }]
+ }
+});
+
+function updateChart(){
+ chart.data.labels=scores.map((_,i)=>"Test "+(i+1));
+ chart.data.datasets[0].data=scores;
+ chart.update();
+}
+
+function startClock(){
+ let time=1200;
+ let clock=document.getElementById("clock");
+ clock.style.display="block";
+
+ let interval=setInterval(()=>{
+   let min=Math.floor(time/60);
+   let sec=time%60;
+   clock.innerText=min+":"+(sec<10?"0"+sec:sec);
+   time--;
+   if(time<0){
+     clearInterval(interval);
+     clock.innerText="TIME OVER";
+   }
+ },1000);
+}
+
+updateDashboard();
+updateChart();
+</script>
+
+</body>
+</html>
